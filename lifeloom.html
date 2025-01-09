@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LifeLoom</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #ffe9a7, #ffa45b);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+
+        h1 {
+            color: #FF6347; /* A nice tomato red for the title */
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            color: #333;
+        }
+
+        input[type="text"], input[type="date"], select, textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            color: white;
+            background-color: #4682B4;
+        }
+
+        textarea {
+            height: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LifeLoom</h1>
+
+        <div class="life-threads">
+            <h2>Life Threads</h2>
+            <input type="text" id="new-thread" placeholder="New Thread">
+            <select id="thread-color">
+                <option value="#FF6347">Red</option>
+                <option value="#4682B4">Blue</option>
+                <option value="#32CD32">Green</option>
+            </select>
+            <button onclick="addThread()">Add Thread</button>
+            <ul id="threads-list"></ul>
+        </div>
+
+        <div class="milestones">
+            <h2>Milestones</h2>
+            <select id="thread-select">
+                <option value="">Select Thread</option>
+            </select>
+            <input type="text" id="milestone-title" placeholder="Milestone Title">
+            <input type="date" id="milestone-date">
+            <button onclick="addMilestone()">Add Milestone</button>
+            <ul id="milestones-list"></ul>
+        </div>
+
+        <div class="micro-steps">
+            <h2>Daily Micro-Steps</h2>
+            <select id="milestone-select">
+                <option value="">Select Milestone</option>
+            </select>
+            <input type="text" id="micro-step" placeholder="Micro-Step">
+            <button onclick="addMicroStep()">Add Micro-Step</button>
+            <ul id="micro-steps-list"></ul>
+        </div>
+
+        <div class="vision-board">
+            <h2>Vision Board</h2>
+            <textarea id="vision-board" placeholder="Add your goals, motivational quotes, or images URLs here"></textarea>
+            <button onclick="saveVisionBoard()">Save Vision Board</button>
+            <ul id="vision-board-list"></ul>
+        </div>
+
+        <div class="reflection-mode">
+            <h2>Reflection Mode</h2>
+            <textarea id="reflection-text" placeholder="Reflect on your completed milestones and share your journey"></textarea>
+            <button onclick="saveReflection()">Save Reflection</button>
+            <ul id="reflection-list"></ul>
+        </div>
+
+        <button onclick="clearData()">Clear All Data</button>
+    </div>
+    <script>
+        let threads = JSON.parse(localStorage.getItem('threads')) || [];
+        let milestones = JSON.parse(localStorage.getItem('milestones')) || [];
+        let microSteps = JSON.parse(localStorage.getItem('microSteps')) || [];
+        let visionBoard = JSON.parse(localStorage.getItem('visionBoard')) || [];
+        let reflections = JSON.parse(localStorage.getItem('reflections')) || [];
+
+        function saveData() {
+            localStorage.setItem('threads', JSON.stringify(threads));
+            localStorage.setItem('milestones', JSON.stringify(milestones));
+            localStorage.setItem('microSteps', JSON.stringify(microSteps));
+            localStorage.setItem('visionBoard', JSON.stringify(visionBoard));
+            localStorage.setItem('reflections', JSON.stringify(reflections));
+        }
+
+        function clearData() {
+            localStorage.clear();
+            threads = [];
+            milestones = [];
+            microSteps = [];
+            visionBoard = [];
+            reflections = [];
+            displayThreads();
+            updateThreadSelect();
+            displayMilestones();
+            displayMicroSteps();
+            displayVisionBoard();
+            displayReflections();
+        }
+
+        function addThread() {
+            const newThread = document.getElementById('new-thread').value;
+            const threadColor = document.getElementById('thread-color').value;
+            if (newThread) {
+                threads.push({ name: newThread, color: threadColor });
+                document.getElementById('new-thread').value = '';
+                displayThreads();
+                updateThreadSelect();
+                saveData();
+            }
+        }
+
+        function displayThreads() {
+            const threadsList = document.getElementById('threads-list');
+            threadsList.innerHTML = '';
+            threads.forEach((thread, index) => {
+                const li = document.createElement('li');
+                li.textContent = thread.name;
+                li.style.backgroundColor = thread.color;
+                threadsList.appendChild(li);
+            });
+        }
+
+        function updateThreadSelect() {
+            const threadSelect = document.getElementById('thread-select');
+            threadSelect.innerHTML = '<option value="">Select Thread</option>';
+            threads.forEach((thread, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = thread.name;
+                threadSelect.appendChild(option);
+            });
+            updateMilestoneSelect();
+        }
+
+        function addMilestone() {
+            const threadIndex = document.getElementById('thread-select').value;
+            const title = document.getElementById('milestone-title').value;
+            const date = document.getElementById('milestone-date').value;
+            if (threadIndex !== '' && title && date) {
+                milestones.push({ threadIndex, title, date, progress: 0 });
+                displayMilestones();
+                updateMilestoneSelect();
+                saveData();
+            }
+        }
+
+        function displayMilestones() {
+            const milestonesList = document.getElementById('milestones-list');
+            milestonesList.innerHTML = '';
+            milestones.forEach((milestone, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `${threads[milestone.threadIndex].name} - ${milestone.title} - ${milestone.date} - ${milestone.progress}% <button onclick="updateProgress(${index})">Update Progress</button>`;
+                milestonesList.appendChild(li);
+            });
+        }
+
+        function updateMilestoneSelect() {
+            const milestoneSelect = document.getElementById('milestone-select');
+            milestoneSelect.innerHTML = '<option value="">Select Milestone</option>';
+            milestones.forEach((milestone, index) => {
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${threads[milestone.threadIndex].name} - ${milestone.title}`;
+                milestoneSelect.appendChild(option);
+            });
+        }
+
+        function addMicroStep() {
+            const milestoneIndex = document.getElementById('milestone-select').value;
+            const microStep = document.getElementById('micro-step').value;
+            if (milestoneIndex !== '' && microStep) {
+                microSteps.push({ milestoneIndex, step: microStep });
+                displayMicroSteps();
+                saveData();
+            }
+        }
+
+        function displayMicroSteps() {
+            const microStepsList = document.getElementById('micro-steps-list');
+            microStepsList.innerHTML = '';
+            microSteps.forEach((microStep, index) => {
+                const li = document.createElement('li');
+                const milestone = milestones[microStep.milestoneIndex];
+                li.textContent = `${threads[milestone.threadIndex].name} - ${milestone.title}: ${microStep.step}`;
+                microStepsList.appendChild(li);
+            });
+        }
+
+        function displayVisionBoard() {
+            const visionBoardList = document.getElementById('vision-board-list');
+            visionBoardList.innerHTML = '';
+            visionBoard.forEach((vision, index) => {
+                const li = document.createElement('li');
+                li.textContent = vision;
+                visionBoardList.appendChild(li);
+            });
+        }
+
+function saveVisionBoard() {
+            const visionText = document.getElementById('vision-board').value;
+            if (visionText) {
+                visionBoard.push(visionText);
+                document.getElementById('vision-board').value = '';
+                displayVisionBoard();
+                saveData();
+            }
+        }
+
+        function displayReflections() {
+            const reflectionList = document.getElementById('reflection-list');
+            reflectionList.innerHTML = '';
+            reflections.forEach((reflection, index) => {
+                const li = document.createElement('li');
+                li.textContent = reflection;
+                reflectionList.appendChild(li);
+            });
+        }
+
+        function saveReflection() {
+            const reflectionText = document.getElementById('reflection-text').value;
+            if (reflectionText) {
+                reflections.push(reflectionText);
+                document.getElementById('reflection-text').value = '';
+                displayReflections();
+                saveData();
+            }
+        }
+
+        function updateProgress(index) {
+            const newProgress = prompt('Enter new progress (%)');
+            if (newProgress !== null) {
+                milestones[index].progress = parseInt(newProgress, 10);
+                displayMilestones();
+                saveData();
+            }
+        }
+
+        // Initial display
+        displayThreads();
+        updateThreadSelect();
+        displayMilestones();
+        displayMicroSteps();
+        displayVisionBoard();
+        displayReflections();
+    </script>
+</body>
+</html>
